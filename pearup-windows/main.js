@@ -6,7 +6,13 @@ import { readConfig, writeConfig, ensureDir, isDaemonRunning } from './lib/confi
 import { generateRoom, validateRoom } from './lib/topic.js'
 import { enableAutostart, disableAutostart, isAutostartEnabled } from './lib/autostart.js'
 
+import fs from 'fs'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const _debugLog = path.join(process.env.USERPROFILE || process.env.HOME || '.', '.pearup', 'debug.log')
+function _dbg (msg) { try { fs.appendFileSync(_debugLog, new Date().toISOString() + ' ' + msg + '\n') } catch {} }
+process.on('uncaughtException', (err) => { _dbg('UNCAUGHT: ' + err.stack); app.quit() })
+process.on('unhandledRejection', (err) => { _dbg('UNHANDLED: ' + (err && err.stack || err)) })
 
 let tray = null
 let chatWindow = null
@@ -232,7 +238,9 @@ async function showSetupDialog () {
 }
 
 async function startApp () {
+  _dbg('startApp called')
   let config = readConfig()
+  _dbg('config: ' + (config ? 'found' : 'null'))
   if (!config) {
     const result = await showSetupDialog()
     if (!result) return
@@ -284,27 +292,30 @@ async function startApp () {
     }
   })
 
-  try {
-    await daemon.start()
-    console.log('Daemon started successfully')
-  } catch (err) {
-    console.error('Failed to start daemon:', err.message)
-    app.quit()
-    return
-  }
-
+  // Create tray icon immediately so user sees it while daemon connects
   try {
     const icon = createTrayIcon(false)
-    console.log('Icon created:', icon.getSize())
+    _dbg('icon created: ' + JSON.stringify(icon.getSize()))
     tray = new Tray(icon)
-    console.log('Tray created successfully')
+    _dbg('tray created OK')
   } catch (err) {
-    console.error('Tray creation failed:', err.message, err.stack)
+    _dbg('tray creation FAILED: ' + err.stack)
   }
   updateTray()
 
   // Refresh tray every 30 seconds for time-ago updates
   setInterval(() => updateTray(), 30000)
+
+  try {
+    _dbg('starting daemon...')
+    await daemon.start()
+    _dbg('daemon started OK')
+    updateTray()
+  } catch (err) {
+    _dbg('daemon start FAILED: ' + err.stack)
+    app.quit()
+    return
+  }
 }
 
 app.whenReady().then(startApp)
