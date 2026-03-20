@@ -1,0 +1,71 @@
+{
+  "name": "pearup",
+  "version": "1.0.0",
+  "description": "P2P inter-Claude messaging — pair up your Claudes",
+  "author": "Jakob Boertje <jakob@pearup.dev>",
+  "homepage": "https://github.com/pearup/pearup",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "tray": "electron main.js",
+    "daemon": "node daemon-entry.js",
+    "build:mac": "npx electron-builder --mac --dir",
+    "build:linux": "npx electron-builder --linux rpm --x64",
+    "build:all": "npx electron-builder --mac --linux rpm --x64"
+  },
+  "build": {
+    "appId": "com.pearup.app",
+    "productName": "PearUp",
+    "files": [
+      "main.js",
+      "preload.cjs",
+      "preload-setup.cjs",
+      "cli.js",
+      "daemon-entry.js",
+      "lib/**/*",
+      "ui/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "cli.js",
+      "daemon-entry.js",
+      "lib/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": "rpm",
+      "category": "Network",
+      "icon": "assets/icon.png",
+      "executableName": "pearup-tray",
+      "extraFiles": [
+        {
+          "from": "scripts/pearup-cli.sh",
+          "to": "pearup-cli"
+        }
+      ]
+    },
+    "rpm": {
+      "depends": ["libappindicator3-1", "nodejs20"],
+      "afterInstall": "scripts/post-install.sh",
+      "afterRemove": "scripts/post-remove.sh"
+    }
+  },
+  "dependencies": {
+    "b4a": "^1.6.4",
+    "bip39": "^3.1.0",
+    "compact-encoding": "^2.15.0",
+    "corestore": "^7.9.1",
+    "hyperbee": "^2.21.0",
+    "hypercore-crypto": "^3.4.2",
+    "hyperswarm": "^4.7.15",
+    "protomux": "^3.10.0"
+  },
+  "devDependencies": {
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1"
+  }
+}

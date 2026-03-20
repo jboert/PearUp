@@ -1,0 +1,5 @@
+node_modules/
+dist/
+PearUp.app/
+*.rpm
+.DS_Store
